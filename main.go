@@ -13,7 +13,7 @@ import (
 )
 
 const AtomWidth = 2
-const AtomMass = 1
+const AtomMass = 0.5
 const Gravity = 1000
 const Friction = 0.5
 
@@ -65,25 +65,6 @@ func handleCollision(atom1 *Atom, atom2 *Atom) {
 	atom1.xPos = float64(atom1.currGridXPos)
 	atom2.xPos = float64(atom2.currGridXPos)
 
-	// var atom1Pos int
-	// var sameDirection = false
-	// if atom1.currGridYPos > atom2.currGridYPos {
-	// 	atom1Pos = 1
-	// } else if atom1.currGridYPos < atom2.currGridYPos {
-	// 	atom1Pos = 3
-	// } else {
-	// 	atom1Pos = 2
-
-	// }
-	// fmt.Printf("Atom1 position: %d", atom1Pos)
-	// atom1.yVel = -atom1.yVel
-
-	// switch atom1Pos {
-	// case 1:
-	// 	atom1.yVel = -atom1.yVel
-	// case 3:
-	// 	atom1.yVel = 2 * atom1.yVel
-	// }
 }
 
 // set the atom's position and velocity
@@ -198,7 +179,7 @@ func renderForce(force Force, imd *imdraw.IMDraw) {
 
 func run() {
 	cfg := pixelgl.WindowConfig{
-		Title:  "Pixel Rocks!",
+		Title:  "Particles!",
 		Bounds: pixel.R(0, 0, 512, 512),
 		VSync:  true,
 	}
@@ -215,7 +196,7 @@ func run() {
 
 	last := time.Now()
 
-	grid := drawGrid()
+	// grid := drawGrid()
 
 	for !win.Closed() {
 		dt := time.Since(last).Seconds()
@@ -223,19 +204,24 @@ func run() {
 		imd.Clear() // clear the window
 
 		// add new atom to screen
-		if win.Pressed(pixelgl.MouseButtonLeft) {
+		if win.JustPressed(pixelgl.MouseButtonLeft) {
 			newColor := pixel.RGB(rand.Float64(), rand.Float64(), rand.Float64())
-			newAtom := Atom{
-				newColor,
-				AtomMass,
-				win.MousePosition().X,
-				win.MousePosition().Y,
-				0,
-				0,
-				int(math.Floor(win.MousePosition().X/AtomWidth) * AtomWidth),
-				int(math.Floor(win.MousePosition().Y/AtomWidth) * AtomWidth),
+			for x := -10.0; x < 10; x++ {
+				for y := -10.0; y < 10; y++ {
+
+					newAtom := Atom{
+						newColor,
+						AtomMass,
+						win.MousePosition().X + x*AtomWidth,
+						win.MousePosition().Y + y*AtomWidth,
+						0,
+						0,
+						int(math.Floor(win.MousePosition().X/AtomWidth) * AtomWidth),
+						int(math.Floor(win.MousePosition().Y/AtomWidth) * AtomWidth),
+					}
+					atoms = append(atoms, &newAtom)
+				}
 			}
-			atoms = append(atoms, &newAtom)
 		}
 
 		if win.JustPressed(pixelgl.MouseButtonRight) {
@@ -270,7 +256,7 @@ func run() {
 		// draw to screen
 		win.Clear(WindowColor)
 		imd.Draw(win)
-		grid.Draw(win)
+		// grid.Draw(win)
 		win.Update()
 		frames++
 		select {
