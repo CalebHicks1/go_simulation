@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"math"
-	"math/rand"
 	"time"
 
 	"github.com/faiface/pixel"
@@ -12,11 +11,13 @@ import (
 	"golang.org/x/image/colornames"
 )
 
-const AtomWidth = 2
+const AtomWidth = 1
 const AtomMass = 0.5
 const Gravity = 1000
 const Friction = 0.5
 const Elasticity = 0.9
+const windowWidth = 1024
+const windowHeight = 512
 
 var (
 	frames      = 0
@@ -25,7 +26,7 @@ var (
 	WindowColor = pixel.RGB(0.1, 0.1, 0.1)
 	atoms       []*Atom
 	forces      []Force
-	grid        [512][512]*Atom
+	grid        [windowWidth][windowHeight]*Atom
 	timeElapsed float64
 )
 
@@ -98,14 +99,14 @@ func updatePostion(atom *Atom, dt float64) {
 		yForce += yComp
 		// fmt.Printf("force: %f, %f\n", xForce, yForce)
 	}
-	if atom.yPos <= 0 || atom.yPos >= 512 { // touching the ground
+	if atom.yPos <= 0 || atom.yPos >= windowHeight { // touching the ground
 		// p = mv
 		// fmt.Print("floor\n")
 		atom.yVel = Elasticity * -atom.yVel
 		atom.yPos = float64(atom.currGridYPos)
 	}
 
-	if atom.xPos <= 0 || atom.xPos >= 512 { // touching the ground
+	if atom.xPos <= 0 || atom.xPos >= windowWidth { // touching the ground
 		// p = mv
 		// fmt.Print("floor\n")
 		atom.xVel = Elasticity * -atom.xVel
@@ -120,8 +121,8 @@ func updatePostion(atom *Atom, dt float64) {
 	atom.yPos = atom.yPos + (atom.yVel * dt) + (0.5 * yAcc * (dt * dt))
 	atom.yVel = atom.yVel + (yAcc * dt)
 
-	gridXPos := int(math.Min(math.Max((math.Floor(atom.xPos/AtomWidth)*AtomWidth), 0), 511))
-	gridYPos := int(math.Min(math.Max((math.Floor(atom.yPos/AtomWidth)*AtomWidth), 0), 511))
+	gridXPos := int(math.Min(math.Max((math.Floor(atom.xPos/AtomWidth)*AtomWidth), 0), windowWidth-1))
+	gridYPos := int(math.Min(math.Max((math.Floor(atom.yPos/AtomWidth)*AtomWidth), 0), windowHeight-1))
 
 	if grid[gridXPos][gridYPos] != nil && grid[gridXPos][gridYPos] != atom {
 		// fmt.Print("collide")
@@ -138,12 +139,12 @@ func updatePostion(atom *Atom, dt float64) {
 func drawGrid() *imdraw.IMDraw {
 	grid := imdraw.New(nil)
 	grid.Color = WindowColor.Mul(pixel.RGB(0.8, 0.8, 0.8))
-	for x := 0.0; x <= 512; x += AtomWidth {
+	for x := 0.0; x <= windowWidth; x += AtomWidth {
 		grid.Push(pixel.V(x, 0))
-		grid.Push(pixel.V(x, 512))
+		grid.Push(pixel.V(x, windowHeight))
 		grid.Line(1)
 		grid.Push(pixel.V(0, x))
-		grid.Push(pixel.V(512, x))
+		grid.Push(pixel.V(windowWidth, x))
 		grid.Line(1)
 	}
 	return grid
@@ -183,7 +184,7 @@ func renderForce(force Force, imd *imdraw.IMDraw) {
 func run() {
 	cfg := pixelgl.WindowConfig{
 		Title:  "Particles!",
-		Bounds: pixel.R(0, 0, 512, 512),
+		Bounds: pixel.R(0, 0, windowWidth, windowHeight),
 		VSync:  true,
 	}
 	win, err := pixelgl.NewWindow(cfg)
@@ -195,7 +196,7 @@ func run() {
 	win.Clear(colornames.Skyblue)
 
 	// create forces
-	forces = append(forces, Force{0, 0, Gravity, 512, -100000})
+	forces = append(forces, Force{0, 0, Gravity, windowWidth / 2, -100000})
 
 	last := time.Now()
 
@@ -208,7 +209,8 @@ func run() {
 
 		// add new atom to screen
 		if win.JustPressed(pixelgl.MouseButtonLeft) {
-			newColor := pixel.RGB(rand.Float64(), rand.Float64(), rand.Float64())
+			// newColor := pixel.RGB(rand.Float64(), rand.Float64(), rand.Float64())
+			newColor := pixel.RGB(0.7, 0.7, 1)
 			for x := -10.0; x < 10; x++ {
 				for y := -10.0; y < 10; y++ {
 
@@ -228,7 +230,7 @@ func run() {
 		}
 
 		if win.JustPressed(pixelgl.MouseButtonRight) {
-			fmt.Print("New Force\n")
+			// fmt.Print("New Force\n")
 			newForce := Force{
 				0,
 				0,
@@ -239,8 +241,8 @@ func run() {
 			forces = append(forces, newForce)
 		}
 
-		if win.Pressed(pixelgl.MouseButtonMiddle) {
-			fmt.Print("New Force\n")
+		if win.Pressed(pixelgl.KeyV) {
+			// fmt.Print("New Force\n")
 			newForce := Force{
 				0,
 				0,
@@ -250,14 +252,20 @@ func run() {
 			}
 			forces = []Force{}
 			forces = append(forces, newForce)
-			forces = append(forces, Force{0, 0, Gravity, 256, -100000})
+			forces = append(forces, Force{0, 0, Gravity, windowWidth / 2, -100000})
+		}
+
+		if win.JustReleased(pixelgl.KeyV) {
+			forces = []Force{}
+			forces = append(forces, Force{0, 0, Gravity, windowWidth / 2, -100000})
+
 		}
 
 		if win.JustPressed(pixelgl.KeyC) {
 			fmt.Print("Cleared Force\n")
 
 			forces = []Force{}
-			forces = append(forces, Force{0, 0, Gravity, 256, -100000})
+			forces = append(forces, Force{0, 0, Gravity, windowWidth / 2, -100000})
 		}
 
 		// simulate every atom
@@ -266,9 +274,9 @@ func run() {
 			updatePostion(atom, dt)
 		}
 
-		for _, force := range forces {
-			renderForce(force, imd)
-		}
+		// for _, force := range forces {
+		// 	renderForce(force, imd)
+		// }
 
 		// draw to screen
 		win.Clear(WindowColor)
