@@ -91,12 +91,10 @@ func updatePostion(atom *Atom, dt float64) {
 		xComp := force.Strength * math.Sin(angle)
 		yComp := force.Strength * math.Cos(angle)
 		// fmt.Printf("%f\n", xComp)
-		// fmt.Printf("%f, %f\n", xDirection, yDirection)
+		// fmt.Printf("%f %f %f, %f\n", math.Sin(angle), math.Cos(angle), xComp, yComp)
 
 		xForce += xComp
 		yForce += yComp
-		// xForce += force.Strength * xDirection
-		// yForce += force.Strength * yDirection
 		// fmt.Printf("force: %f, %f\n", xForce, yForce)
 	}
 	if atom.yPos <= 0 || atom.yPos >= 512 { // touching the ground
@@ -172,9 +170,13 @@ func renderForce(force Force, imd *imdraw.IMDraw) {
 
 	// imd.Push(pixel.V(float64(atom.xPos), float64(atom.yPos)))
 	// imd.Push(pixel.V(float64(atom.xPos)+AtomWidth, float64(atom.yPos)+AtomWidth))
-	imd.Push(pixel.V(float64(renderXPos), float64(renderYPos)))
-	imd.Push(pixel.V(float64(renderXPos)+AtomWidth, float64(renderYPos)+AtomWidth))
-	imd.Rectangle(0)
+	imd.Push(pixel.V(float64(renderXPos), float64(renderYPos)-1000))
+	imd.Push(pixel.V(float64(renderXPos), float64(renderYPos)+1000000))
+	imd.Line(1)
+	imd.Push(pixel.V(float64(renderXPos)-1000, float64(renderYPos)))
+	imd.Push(pixel.V(float64(renderXPos)+1000, float64(renderYPos)))
+	// imd.Rectangle(0)
+	imd.Line(1)
 }
 
 func run() {
@@ -192,7 +194,7 @@ func run() {
 	win.Clear(colornames.Skyblue)
 
 	// create forces
-	forces = append(forces, Force{0, 0, Gravity, 256, -100000})
+	forces = append(forces, Force{0, 0, Gravity, 256.5, -100000})
 
 	last := time.Now()
 
