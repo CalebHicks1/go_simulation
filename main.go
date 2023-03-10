@@ -16,6 +16,7 @@ const AtomWidth = 2
 const AtomMass = 0.5
 const Gravity = 1000
 const Friction = 0.5
+const Elasticity = 0.9
 
 var (
 	frames      = 0
@@ -51,15 +52,15 @@ func handleCollision(atom1 *Atom, atom2 *Atom) {
 
 	// m1*v1 + m2*v2 = m1*v3 +m2*v4
 
-	tempYVel := 0.8 * atom1.yVel
-	atom1.yVel = 0.8 * atom2.yVel
+	tempYVel := Elasticity * atom1.yVel
+	atom1.yVel = Elasticity * atom2.yVel
 	atom2.yVel = tempYVel
 
 	atom1.yPos = float64(atom1.currGridYPos)
 	atom2.yPos = float64(atom2.currGridYPos)
 
-	tempXVel := 0.8 * atom1.xVel
-	atom1.xVel = 0.8 * atom2.xVel
+	tempXVel := Elasticity * atom1.xVel
+	atom1.xVel = Elasticity * atom2.xVel
 	atom2.xVel = tempXVel
 
 	atom1.xPos = float64(atom1.currGridXPos)
@@ -100,14 +101,14 @@ func updatePostion(atom *Atom, dt float64) {
 	if atom.yPos <= 0 || atom.yPos >= 512 { // touching the ground
 		// p = mv
 		// fmt.Print("floor\n")
-		atom.yVel = 0.8 * -atom.yVel
+		atom.yVel = Elasticity * -atom.yVel
 		atom.yPos = float64(atom.currGridYPos)
 	}
 
 	if atom.xPos <= 0 || atom.xPos >= 512 { // touching the ground
 		// p = mv
 		// fmt.Print("floor\n")
-		atom.xVel = 0.8 * -atom.xVel
+		atom.xVel = Elasticity * -atom.xVel
 		atom.xPos = float64(atom.currGridXPos)
 	}
 
@@ -194,7 +195,7 @@ func run() {
 	win.Clear(colornames.Skyblue)
 
 	// create forces
-	forces = append(forces, Force{0, 0, Gravity, 256.5, -100000})
+	forces = append(forces, Force{0, 0, Gravity, 512, -100000})
 
 	last := time.Now()
 
@@ -236,6 +237,20 @@ func run() {
 				win.MousePosition().Y,
 			}
 			forces = append(forces, newForce)
+		}
+
+		if win.Pressed(pixelgl.MouseButtonMiddle) {
+			fmt.Print("New Force\n")
+			newForce := Force{
+				0,
+				0,
+				1500,
+				win.MousePosition().X,
+				win.MousePosition().Y,
+			}
+			forces = []Force{}
+			forces = append(forces, newForce)
+			forces = append(forces, Force{0, 0, Gravity, 256, -100000})
 		}
 
 		if win.JustPressed(pixelgl.KeyC) {
