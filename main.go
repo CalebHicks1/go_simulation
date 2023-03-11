@@ -11,22 +11,25 @@ import (
 	"golang.org/x/image/colornames"
 )
 
-const AtomWidth = 1
+const AtomWidth = 4
 const AtomMass = 0.5
 const Gravity = 1000
 const Friction = 0.5
-const Elasticity = 0.9
-const windowWidth = 1024
-const windowHeight = 512
+const Elasticity = 0.2
+const particleCollision = 0.97
+const windowWidth = 1200
+const windowHeight = 600
+const mouseGrav = 2000
 
 var (
+	gravEnabled = true
 	frames      = 0
 	second      = time.Tick(time.Second)
 	color       = pixel.RGB(1, 0, 0)
 	WindowColor = pixel.RGB(0.1, 0.1, 0.1)
 	atoms       []*Atom
 	forces      []Force
-	grid        [windowWidth][windowHeight]*Atom
+	grid        [windowWidth + 1][windowHeight + 1]*Atom
 	timeElapsed float64
 )
 
@@ -42,6 +45,7 @@ type Atom struct {
 }
 
 type Force struct {
+	source     string
 	xComponent float64
 	yComponent float64
 	Strength   float64
@@ -53,16 +57,24 @@ func handleCollision(atom1 *Atom, atom2 *Atom) {
 
 	// m1*v1 + m2*v2 = m1*v3 +m2*v4
 
-	tempYVel := Elasticity * atom1.yVel
-	atom1.yVel = Elasticity * atom2.yVel
+	tempYVel := particleCollision * atom1.yVel
+	atom1.yVel = particleCollision * atom2.yVel
 	atom2.yVel = tempYVel
+
+	// tempYVel := Elasticity * atom1.yVel
+	// atom1.yVel = Elasticity * atom2.yVel
+	// atom2.yVel = tempYVel
 
 	atom1.yPos = float64(atom1.currGridYPos)
 	atom2.yPos = float64(atom2.currGridYPos)
 
-	tempXVel := Elasticity * atom1.xVel
-	atom1.xVel = Elasticity * atom2.xVel
+	tempXVel := particleCollision * atom1.xVel
+	atom1.xVel = particleCollision * atom2.xVel
 	atom2.xVel = tempXVel
+
+	// tempXVel := Elasticity * atom1.xVel
+	// atom1.xVel = Elasticity * atom2.xVel
+	// atom2.xVel = tempXVel
 
 	atom1.xPos = float64(atom1.currGridXPos)
 	atom2.xPos = float64(atom2.currGridXPos)
@@ -89,9 +101,22 @@ func updatePostion(atom *Atom, dt float64) {
 		// }
 
 		// calculate angle towards force
-		angle := math.Atan2(force.xPos-atom.xPos, force.yPos-atom.yPos)
-		xComp := force.Strength * math.Sin(angle)
-		yComp := force.Strength * math.Cos(angle)
+
+		xComp := 0.0
+		yComp := 0.0
+		if gravEnabled && force.source == "gravity" {
+			yComp = force.Strength * -1
+		} else {
+			distance := math.Max(math.Sqrt(math.Pow(force.xPos-atom.xPos, 2)+math.Pow(force.yPos-atom.yPos, 2))/200, 1)
+
+			forceAfterDistance := force.Strength / math.Pow(distance, 2)
+
+			angle := math.Atan2(force.xPos-atom.xPos, force.yPos-atom.yPos)
+			// xComp := forceAfterDistance * math.Sin(angle)
+			// yComp := forceAfterDistance * math.Cos(angle)
+			xComp = forceAfterDistance * math.Sin(angle)
+			yComp = forceAfterDistance * math.Cos(angle)
+		}
 		// fmt.Printf("%f\n", xComp)
 		// fmt.Printf("%f %f %f, %f\n", math.Sin(angle), math.Cos(angle), xComp, yComp)
 
@@ -99,14 +124,14 @@ func updatePostion(atom *Atom, dt float64) {
 		yForce += yComp
 		// fmt.Printf("force: %f, %f\n", xForce, yForce)
 	}
-	if atom.yPos <= 0 || atom.yPos >= windowHeight { // touching the ground
+	if (atom.yPos <= 0 && atom.yVel < 0) || atom.yPos >= windowHeight { // touching the ground
 		// p = mv
 		// fmt.Print("floor\n")
 		atom.yVel = Elasticity * -atom.yVel
 		atom.yPos = float64(atom.currGridYPos)
 	}
 
-	if atom.xPos <= 0 || atom.xPos >= windowWidth { // touching the ground
+	if (atom.xPos <= 0 && atom.xVel < 0) || (atom.xPos >= windowWidth && atom.xVel > 0) { // touching the ground
 		// p = mv
 		// fmt.Print("floor\n")
 		atom.xVel = Elasticity * -atom.xVel
@@ -121,8 +146,8 @@ func updatePostion(atom *Atom, dt float64) {
 	atom.yPos = atom.yPos + (atom.yVel * dt) + (0.5 * yAcc * (dt * dt))
 	atom.yVel = atom.yVel + (yAcc * dt)
 
-	gridXPos := int(math.Min(math.Max((math.Floor(atom.xPos/AtomWidth)*AtomWidth), 0), windowWidth-1))
-	gridYPos := int(math.Min(math.Max((math.Floor(atom.yPos/AtomWidth)*AtomWidth), 0), windowHeight-1))
+	gridXPos := int(math.Min(math.Max((math.Floor(atom.xPos/AtomWidth)*AtomWidth), 0), windowWidth))
+	gridYPos := int(math.Min(math.Max((math.Floor(atom.yPos/AtomWidth)*AtomWidth), 0), windowHeight))
 
 	if grid[gridXPos][gridYPos] != nil && grid[gridXPos][gridYPos] != atom {
 		// fmt.Print("collide")
@@ -196,7 +221,7 @@ func run() {
 	win.Clear(colornames.Skyblue)
 
 	// create forces
-	forces = append(forces, Force{0, 0, Gravity, windowWidth / 2, -100000})
+	forces = append(forces, Force{"gravity", 0, 0, Gravity, windowWidth / 2, -100000})
 
 	last := time.Now()
 
@@ -210,7 +235,7 @@ func run() {
 		// add new atom to screen
 		if win.JustPressed(pixelgl.MouseButtonLeft) {
 			// newColor := pixel.RGB(rand.Float64(), rand.Float64(), rand.Float64())
-			newColor := pixel.RGB(0.7, 0.7, 1)
+			newColor := pixel.RGB(0.7, 1, 0.7)
 			for x := -10.0; x < 10; x++ {
 				for y := -10.0; y < 10; y++ {
 
@@ -232,32 +257,38 @@ func run() {
 		if win.JustPressed(pixelgl.MouseButtonRight) {
 			// fmt.Print("New Force\n")
 			newForce := Force{
+				"mouse",
 				0,
 				0,
-				1500,
+				mouseGrav,
 				win.MousePosition().X,
 				win.MousePosition().Y,
 			}
 			forces = append(forces, newForce)
+		}
+
+		if win.JustPressed(pixelgl.KeyG) {
+			gravEnabled = !gravEnabled
 		}
 
 		if win.Pressed(pixelgl.KeyV) {
 			// fmt.Print("New Force\n")
 			newForce := Force{
+				"mouse",
 				0,
 				0,
-				1500,
+				mouseGrav,
 				win.MousePosition().X,
 				win.MousePosition().Y,
 			}
 			forces = []Force{}
 			forces = append(forces, newForce)
-			forces = append(forces, Force{0, 0, Gravity, windowWidth / 2, -100000})
+			forces = append(forces, Force{"gravity", 0, 0, Gravity, windowWidth / 2, -100000})
 		}
 
 		if win.JustReleased(pixelgl.KeyV) {
 			forces = []Force{}
-			forces = append(forces, Force{0, 0, Gravity, windowWidth / 2, -100000})
+			forces = append(forces, Force{"gravity", 0, 0, Gravity, windowWidth / 2, -100000})
 
 		}
 
@@ -265,7 +296,7 @@ func run() {
 			fmt.Print("Cleared Force\n")
 
 			forces = []Force{}
-			forces = append(forces, Force{0, 0, Gravity, windowWidth / 2, -100000})
+			forces = append(forces, Force{"gravity", 0, 0, Gravity, windowWidth / 2, -100000})
 		}
 
 		// simulate every atom
