@@ -8,7 +8,6 @@ import (
 	"github.com/faiface/pixel"
 	"github.com/faiface/pixel/imdraw"
 	"github.com/faiface/pixel/pixelgl"
-	"golang.org/x/image/colornames"
 )
 
 const AtomWidth = 4
@@ -20,13 +19,14 @@ const particleCollision = 0.97
 const windowWidth = 1200
 const windowHeight = 600
 const mouseGrav = 2000
+const extraAtomWidth = 2
 
 var (
 	gravEnabled = true
 	frames      = 0
 	second      = time.Tick(time.Second)
-	color       = pixel.RGB(1, 0, 0)
-	WindowColor = pixel.RGB(0.1, 0.1, 0.1)
+	color       = pixel.RGB(0.3, 0.3, 1).Mul(pixel.Alpha(0.7))
+	WindowColor = pixel.RGB(0.9, 0.3, 0.5)
 	atoms       []*Atom
 	forces      []Force
 	grid        [windowWidth + 1][windowHeight + 1]*Atom
@@ -184,8 +184,8 @@ func renderAtom(atom Atom, imd *imdraw.IMDraw) {
 
 	// imd.Push(pixel.V(float64(atom.xPos), float64(atom.yPos)))
 	// imd.Push(pixel.V(float64(atom.xPos)+AtomWidth, float64(atom.yPos)+AtomWidth))
-	imd.Push(pixel.V(float64(renderXPos), float64(renderYPos)))
-	imd.Push(pixel.V(float64(renderXPos)+AtomWidth, float64(renderYPos)+AtomWidth))
+	imd.Push(pixel.V(float64(renderXPos)-extraAtomWidth, float64(renderYPos)-extraAtomWidth))
+	imd.Push(pixel.V(float64(renderXPos)+AtomWidth+extraAtomWidth, float64(renderYPos)+AtomWidth+extraAtomWidth))
 	imd.Rectangle(0)
 }
 
@@ -218,7 +218,7 @@ func run() {
 	}
 	imd := imdraw.New(nil)
 
-	win.Clear(colornames.Skyblue)
+	// win.Clear(colornames.Skyblue)
 
 	// create forces
 	forces = append(forces, Force{"gravity", 0, 0, Gravity, windowWidth / 2, -100000})
@@ -235,12 +235,13 @@ func run() {
 		// add new atom to screen
 		if win.JustPressed(pixelgl.MouseButtonLeft) {
 			// newColor := pixel.RGB(rand.Float64(), rand.Float64(), rand.Float64())
-			newColor := pixel.RGB(0.7, 1, 0.7)
+			// newColor := pixel.RGB(0.7, 1, 0.7)
+			// newColor := pixel.RGB(0.2, 0.2, 1).Mul(pixel.Alpha(0.2))
 			for x := -10.0; x < 10; x++ {
 				for y := -10.0; y < 10; y++ {
 
 					newAtom := Atom{
-						newColor,
+						color,
 						AtomMass,
 						win.MousePosition().X + x*AtomWidth,
 						win.MousePosition().Y + y*AtomWidth,
