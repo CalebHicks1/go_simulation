@@ -16,7 +16,7 @@ const Gravity = 1000
 const Friction = 0.5
 const Elasticity = 0.2
 const particleCollision = 0.97
-const windowWidth = 1200
+const windowWidth = 1200 // must be a multiple of AtomWidth
 const windowHeight = 600
 const mouseGrav = 2000
 const extraAtomWidth = 2
@@ -29,19 +29,20 @@ var (
 	WindowColor = pixel.RGB(0.9, 0.3, 0.5)
 	atoms       []*Atom
 	forces      []Force
-	grid        [windowWidth + 1][windowHeight + 1]*Atom
+	grid        [windowWidth/AtomWidth + 1][windowHeight/AtomWidth + 1]*Atom
 	timeElapsed float64
+	AtomTypes   = []string{"water", "stone"}
 )
 
 type Atom struct {
 	color        pixel.RGBA
 	mass         float64
-	xPos         float64
-	yPos         float64
+	xPos         float64 // the actual x location of the atom
+	yPos         float64 // the actual y location of the atom
 	xVel         float64
 	yVel         float64
-	currGridXPos int
-	currGridYPos int
+	currGridXPos int // the x location on the pixel grid of the atom
+	currGridYPos int // the y location on the pixel grid of the atom
 }
 
 type Force struct {
@@ -65,8 +66,8 @@ func handleCollision(atom1 *Atom, atom2 *Atom) {
 	// atom1.yVel = Elasticity * atom2.yVel
 	// atom2.yVel = tempYVel
 
-	atom1.yPos = float64(atom1.currGridYPos)
-	atom2.yPos = float64(atom2.currGridYPos)
+	atom1.yPos = float64(atom1.currGridYPos * AtomWidth)
+	atom2.yPos = float64(atom2.currGridYPos * AtomWidth)
 
 	tempXVel := particleCollision * atom1.xVel
 	atom1.xVel = particleCollision * atom2.xVel
@@ -76,8 +77,8 @@ func handleCollision(atom1 *Atom, atom2 *Atom) {
 	// atom1.xVel = Elasticity * atom2.xVel
 	// atom2.xVel = tempXVel
 
-	atom1.xPos = float64(atom1.currGridXPos)
-	atom2.xPos = float64(atom2.currGridXPos)
+	atom1.xPos = float64(atom1.currGridXPos * AtomWidth)
+	atom2.xPos = float64(atom2.currGridXPos * AtomWidth)
 
 }
 
@@ -124,20 +125,26 @@ func updatePostion(atom *Atom, dt float64) {
 		yForce += yComp
 		// fmt.Printf("force: %f, %f\n", xForce, yForce)
 	}
-	if (atom.yPos <= 0 && atom.yVel < 0) || atom.yPos >= windowHeight { // touching the ground
+
+	// check for window boundary collisions at floor and ceiling.
+	if (atom.yPos <= 0 && atom.yVel < 0) || atom.yPos >= windowHeight {
 		// p = mv
 		// fmt.Print("floor\n")
+
+		// set the Atom's location to its current grid location, to move it back a little
 		atom.yVel = Elasticity * -atom.yVel
-		atom.yPos = float64(atom.currGridYPos)
+		atom.yPos = float64(atom.currGridYPos * AtomWidth)
 	}
 
-	if (atom.xPos <= 0 && atom.xVel < 0) || (atom.xPos >= windowWidth && atom.xVel > 0) { // touching the ground
-		// p = mv
-		// fmt.Print("floor\n")
+	// check for window boundary collisions at walls.
+	if (atom.xPos <= 0 && atom.xVel < 0) || (atom.xPos >= windowWidth && atom.xVel > 0) {
+
+		// set the Atom's location to its current grid location, to move it back a little
 		atom.xVel = Elasticity * -atom.xVel
-		atom.xPos = float64(atom.currGridXPos)
+		atom.xPos = float64(atom.currGridXPos * AtomWidth)
 	}
 
+	// calculate the Atom's x and y acceleration and velocity
 	xAcc := xForce / atom.mass
 	atom.xPos = atom.xPos + (atom.xVel * dt) + (0.5 * xAcc * (dt * dt))
 	atom.xVel = atom.xVel + (xAcc * dt)
@@ -146,8 +153,14 @@ func updatePostion(atom *Atom, dt float64) {
 	atom.yPos = atom.yPos + (atom.yVel * dt) + (0.5 * yAcc * (dt * dt))
 	atom.yVel = atom.yVel + (yAcc * dt)
 
-	gridXPos := int(math.Min(math.Max((math.Floor(atom.xPos/AtomWidth)*AtomWidth), 0), windowWidth))
-	gridYPos := int(math.Min(math.Max((math.Floor(atom.yPos/AtomWidth)*AtomWidth), 0), windowHeight))
+	// calculate the atom's new grid location
+
+	gridXPos := int(math.Min(math.Max((math.Floor(atom.xPos/AtomWidth)), 0), windowWidth/AtomWidth))
+	gridYPos := int(math.Min(math.Max((math.Floor(atom.yPos/AtomWidth)), 0), windowHeight/AtomWidth))
+
+	// fmt.Printf("New grid location: (%d, %d)\n", gridXPos, gridYPos)
+
+	// check if the new grid location is occupied
 
 	if grid[gridXPos][gridYPos] != nil && grid[gridXPos][gridYPos] != atom {
 		// fmt.Print("collide")
@@ -179,8 +192,10 @@ func drawGrid() *imdraw.IMDraw {
 func renderAtom(atom Atom, imd *imdraw.IMDraw) {
 	imd.Color = atom.color
 
-	renderXPos := int(math.Floor(atom.xPos/AtomWidth) * AtomWidth)
-	renderYPos := int(math.Floor(atom.yPos/AtomWidth) * AtomWidth)
+	renderXPos := atom.currGridXPos * AtomWidth
+	renderYPos := atom.currGridYPos * AtomWidth
+	// renderXPos := int(math.Floor(atom.xPos/AtomWidth) * AtomWidth)
+	// renderYPos := int(math.Floor(atom.yPos/AtomWidth) * AtomWidth)
 
 	// imd.Push(pixel.V(float64(atom.xPos), float64(atom.yPos)))
 	// imd.Push(pixel.V(float64(atom.xPos)+AtomWidth, float64(atom.yPos)+AtomWidth))
@@ -240,17 +255,33 @@ func run() {
 			for x := -10.0; x < 10; x++ {
 				for y := -10.0; y < 10; y++ {
 
-					newAtom := Atom{
-						color,
-						AtomMass,
-						win.MousePosition().X + x*AtomWidth,
-						win.MousePosition().Y + y*AtomWidth,
-						0,
-						0,
-						int(math.Floor(win.MousePosition().X/AtomWidth) * AtomWidth),
-						int(math.Floor(win.MousePosition().Y/AtomWidth) * AtomWidth),
+					// fmt.Printf("MousePosition: (%f, %f)\n", win.MousePosition().X+x*AtomWidth, win.MousePosition().Y+y*AtomWidth)
+					// fmt.Printf("GridPosition: (%d, %d)\n", int(math.Floor(win.MousePosition().X/AtomWidth)), int(math.Floor(win.MousePosition().Y/AtomWidth)))
+
+					// create a new atom at the location of the mouse.
+					// calculate the grid location of the atom
+
+					gridX := int((math.Floor(win.MousePosition().X+x*AtomWidth) / AtomWidth))
+					gridY := int((math.Floor(win.MousePosition().Y+y*AtomWidth) / AtomWidth))
+
+					if gridX >= 0 && gridX < windowWidth/AtomWidth && gridY >= 0 && gridY < windowHeight/AtomWidth {
+						if grid[gridX][gridY] == nil {
+							newAtom := Atom{
+								color,
+								AtomMass,
+								win.MousePosition().X + x*AtomWidth,
+								win.MousePosition().Y + y*AtomWidth,
+								0,
+								0,
+								gridX,
+								gridY,
+							}
+							atoms = append(atoms, &newAtom)
+							grid[gridX][gridY] = &newAtom
+
+						}
 					}
-					atoms = append(atoms, &newAtom)
+
 				}
 			}
 		}
@@ -301,9 +332,20 @@ func run() {
 		}
 
 		// simulate every atom
-		for _, atom := range atoms {
-			renderAtom(*atom, imd)
-			updatePostion(atom, dt)
+		// for _, atom := range atoms {
+		// 	renderAtom(*atom, imd)
+		// 	updatePostion(atom, dt)
+		// }
+
+		tempGrid := grid
+
+		for x := 0; x < windowWidth/AtomWidth; x++ {
+			for y := 0; y < windowHeight/AtomWidth; y++ {
+				if tempGrid[x][y] != nil {
+					renderAtom(*tempGrid[x][y], imd)
+					updatePostion(tempGrid[x][y], dt)
+				}
+			}
 		}
 
 		// for _, force := range forces {
