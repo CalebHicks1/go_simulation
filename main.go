@@ -72,7 +72,7 @@ var AtomTypes = []AtomType{
 	},
 	AtomType{
 		"stone",
-		0.2,
+		0.5,
 		0.2,
 		pixel.RGB(0.2, 0.2, 0.2),
 		0,
