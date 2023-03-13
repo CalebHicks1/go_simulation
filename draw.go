@@ -1,7 +1,9 @@
 package main
 
 import (
+	"image"
 	"math"
+	"os"
 
 	"github.com/faiface/pixel"
 	"github.com/faiface/pixel/imdraw"
@@ -38,4 +40,23 @@ func renderForce(force Force, imd *imdraw.IMDraw) {
 	imd.Push(pixel.V(float64(renderXPos)+1000, float64(renderYPos)))
 	// imd.Rectangle(0)
 	imd.Line(1)
+}
+
+func loadPicture(path string) (pixel.Picture, error) {
+	file, err := os.Open(path)
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+	img, _, err := image.Decode(file)
+	if err != nil {
+		return nil, err
+	}
+	return pixel.PictureDataFromImage(img), nil
+}
+
+func renderPlayer(imd *imdraw.IMDraw, player Player) {
+	imd.Color = player.color
+	imd.Push(pixel.V(player.xPos, player.yPos))
+	imd.Circle(float64(player.width), 0)
 }

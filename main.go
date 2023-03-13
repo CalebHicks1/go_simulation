@@ -42,6 +42,18 @@ type Atom struct {
 	currGridYPos int // the y location on the pixel grid of the atom
 }
 
+type Player struct {
+	xPos  float64
+	yPos  float64
+	xVel  float64
+	yVel  float64
+	xAcc  float64
+	yAcc  float64
+	width int
+	color pixel.RGBA
+	mass  float64
+}
+
 // constant definitions
 const AtomWidth = 4
 const Gravity = 20
@@ -133,6 +145,17 @@ func run() {
 
 	// grid := drawGrid()
 
+	player := Player{
+		windowWidth / 2,
+		windowHeight / 2,
+		0,
+		0,
+		0,
+		0,
+		20,
+		pixel.RGB(0, 0, 1),
+		5}
+
 	for !win.Closed() {
 		dt := time.Since(last).Seconds()
 		last = time.Now()
@@ -158,6 +181,9 @@ func run() {
 
 		// draw to screen
 		win.Clear(WindowColor)
+		controlPlayer(*win, &player, dt)
+		simulatePlayer(&player, dt)
+		renderPlayer(imd, player)
 		imd.Draw(win)
 		typeText.Draw(win, pixel.IM)
 		// grid.Draw(win)

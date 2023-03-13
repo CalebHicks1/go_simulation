@@ -45,7 +45,7 @@ func handleKeyPress(win pixelgl.Window, imd *imdraw.IMDraw) {
 	}
 
 	// add new atom to screen
-	if win.Pressed(pixelgl.KeyD) {
+	if win.Pressed(pixelgl.KeyE) {
 
 		imd.Color = pixel.RGB(1, 0, 0)
 		imd.Push(pixel.V(win.MousePosition().X-10*AtomWidth, win.MousePosition().Y-10*AtomWidth))
