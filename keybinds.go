@@ -33,6 +33,7 @@ func handleKeyPress(win pixelgl.Window, imd *imdraw.IMDraw) {
 							0,
 							gridX,
 							gridY,
+							"particle",
 						}
 						atoms = append(atoms, &newAtom)
 						grid[gridX][gridY] = &newAtom

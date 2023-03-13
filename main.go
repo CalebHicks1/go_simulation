@@ -40,6 +40,7 @@ type Atom struct {
 	yVel         float64
 	currGridXPos int // the x location on the pixel grid of the atom
 	currGridYPos int // the y location on the pixel grid of the atom
+	status       string
 }
 
 type Player struct {
@@ -82,17 +83,17 @@ var AtomTypes = []AtomType{
 		0.5,
 		0.2,
 		pixel.RGB(0.1, 0.6, 1),
-		0,
+		2,
 		0.5,
 		0.5,
 	},
 	AtomType{
-		"stone",
-		0.2,
-		0.2,
+		"ash",
+		0.8,
+		0.5,
 		pixel.RGB(0.2, 0.2, 0.2),
 		0,
-		5,
+		0.3,
 		0.5,
 	},
 	AtomType{
@@ -101,7 +102,7 @@ var AtomTypes = []AtomType{
 		0.2,
 		pixel.RGB(0, 0, 0),
 		0,
-		5,
+		100,
 		0.5,
 	},
 }

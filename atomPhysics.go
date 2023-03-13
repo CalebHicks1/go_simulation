@@ -165,23 +165,29 @@ func simulateWater(atom *Atom, dt float64) {
 	// 		atom.xVel = -50
 	// 	}
 	// }
-	if atom.currGridYPos > 0 && grid[atom.currGridXPos][atom.currGridYPos-1] != nil {
+	if gravEnabled && atom.currGridYPos > 0 && grid[atom.currGridXPos][atom.currGridYPos-1] != nil {
+		atom.status = "sandbox"
+	} else {
+		atom.status = "particle"
 
+	}
+
+	if atom.status == "sandbox" {
 		if grid[atom.currGridXPos+1][atom.currGridYPos] == nil {
 
-			// grid[atom.currGridXPos][atom.currGridYPos] = nil
-			// atom.currGridXPos += 1
-			// atom.xPos += AtomWidth
-			// grid[atom.currGridXPos][atom.currGridYPos] = atom
-			atom.xVel += 100
+			grid[atom.currGridXPos][atom.currGridYPos] = nil
+			atom.currGridXPos += 1
+			atom.xPos = float64(atom.currGridXPos * AtomWidth)
+			grid[atom.currGridXPos][atom.currGridYPos] = atom
+			// atom.xVel += 100
 
 		} else if atom.currGridXPos-1 >= 0 && grid[atom.currGridXPos-1][atom.currGridYPos] == nil {
 
-			// grid[atom.currGridXPos][atom.currGridYPos] = nil
-			// atom.currGridXPos -= 1
-			// atom.xPos -= AtomWidth
-			// grid[atom.currGridXPos][atom.currGridYPos] = atom
-			atom.xVel -= 100
+			grid[atom.currGridXPos][atom.currGridYPos] = nil
+			atom.currGridXPos -= 1
+			atom.xPos = float64(atom.currGridXPos * AtomWidth)
+			grid[atom.currGridXPos][atom.currGridYPos] = atom
+			// atom.xVel -= 100
 		}
 	}
 }
