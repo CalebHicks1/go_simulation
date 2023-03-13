@@ -2,11 +2,14 @@ package main
 
 import (
 	"fmt"
+	"image/color"
 	"time"
 
 	"github.com/faiface/pixel"
 	"github.com/faiface/pixel/imdraw"
 	"github.com/faiface/pixel/pixelgl"
+	"github.com/faiface/pixel/text"
+	"golang.org/x/image/font/basicfont"
 )
 
 type Force struct {
@@ -51,30 +54,40 @@ var (
 	gravEnabled = true
 	frames      = 0
 	second      = time.Tick(time.Second)
-	color       = pixel.RGB(0.3, 0.3, 1).Mul(pixel.Alpha(0.7))
-	WindowColor = pixel.RGB(0.9, 0.3, 0.5)
+	WindowColor = pixel.RGB(1, 1, 0.9)
 	atoms       []*Atom
 	forces      []Force
 	grid        [windowWidth/AtomWidth + 1][windowHeight/AtomWidth + 1]*Atom
 	timeElapsed float64
 	currType    = 0
+	atlas       = text.NewAtlas(basicfont.Face7x13, text.ASCII)
+	typeText    = text.New(pixel.V(10, windowHeight-23), atlas)
 )
 
 var AtomTypes = []AtomType{
 	AtomType{
 		"water",
-		0.97,
+		0.5,
 		0.2,
-		pixel.RGB(0.3, 0.3, 1).Mul(pixel.Alpha(0.5)),
-		4,
+		pixel.RGB(0.1, 0.6, 1),
+		0,
 		0.5,
 		0.5,
 	},
 	AtomType{
 		"stone",
-		0.5,
+		0.2,
 		0.2,
 		pixel.RGB(0.2, 0.2, 0.2),
+		0,
+		5,
+		0.5,
+	},
+	AtomType{
+		"static",
+		0.2,
+		0.2,
+		pixel.RGB(0, 0, 0),
 		0,
 		5,
 		0.5,
@@ -107,6 +120,10 @@ func run() {
 	}
 	imd := imdraw.New(nil)
 
+	typeText.Color = color.Black
+	fmt.Fprintf(typeText, "Atom Type: ")
+	typeText.Color = AtomTypes[0].color
+	fmt.Fprintf(typeText, "%s", AtomTypes[0].name)
 	// win.Clear(colornames.Skyblue)
 
 	// create forces
@@ -122,7 +139,7 @@ func run() {
 		imd.Clear() // clear the window
 
 		// keypress
-		handleKeyPress(*win)
+		handleKeyPress(*win, imd)
 
 		// simulate Atoms
 		tempGrid := grid
@@ -142,6 +159,7 @@ func run() {
 		// draw to screen
 		win.Clear(WindowColor)
 		imd.Draw(win)
+		typeText.Draw(win, pixel.IM)
 		// grid.Draw(win)
 		win.Update()
 		frames++

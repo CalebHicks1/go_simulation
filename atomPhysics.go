@@ -2,20 +2,22 @@ package main
 
 import (
 	"math"
-	"math/rand"
 )
 
 func updatePostion(atom *Atom, dt float64) {
 
-	switch atom.atomType.name {
-	case "water":
-		simulateWater(atom, dt)
-	// case "stone":
-	// 	simulateStone(atom, dt)
-	default:
-		break
+	if atom.atomType.name != "static" {
+
+		switch atom.atomType.name {
+		case "water":
+			simulateWater(atom, dt)
+		// case "stone":
+		// 	simulateStone(atom, dt)
+		default:
+			break
+		}
+		simulateAtom(atom, dt)
 	}
-	simulateAtom(atom, dt)
 }
 
 func handleCollision(atom1 *Atom, atom2 *Atom) {
@@ -33,7 +35,6 @@ func handleCollision(atom1 *Atom, atom2 *Atom) {
 	atom1.yVel = atom2.atomType.collisionElasticity*(((atom1.atomType.mass-atom2.atomType.mass)/(atom1.atomType.mass+atom2.atomType.mass))*atom1.yVel) + (((2 * atom2.atomType.mass) / (atom1.atomType.mass + atom2.atomType.mass)) * atom2.yVel)
 	atom2.yVel = tempYVel
 
-	atom1.yPos = float64(atom1.currGridYPos * AtomWidth)
 	// atom2.yPos = float64(atom2.currGridYPos * AtomWidth)
 
 	// x
@@ -42,7 +43,6 @@ func handleCollision(atom1 *Atom, atom2 *Atom) {
 	atom1.xVel = atom2.atomType.collisionElasticity*(((atom1.atomType.mass-atom2.atomType.mass)/(atom1.atomType.mass+atom2.atomType.mass))*atom1.xVel) + (((2 * atom2.atomType.mass) / (atom1.atomType.mass + atom2.atomType.mass)) * atom2.xVel)
 	atom2.xVel = tempXVel
 
-	atom1.xPos = float64(atom1.currGridXPos * AtomWidth)
 	// atom2.xPos = float64(atom2.currGridXPos * AtomWidth)
 	// atom1.xPos = float64((atom1.currGridXPos * AtomWidth) + AtomWidth/2)
 	// atom2.xPos = float64((atom2.currGridXPos * AtomWidth) + AtomWidth/2)
@@ -58,8 +58,11 @@ func simulateAtom(atom *Atom, dt float64) {
 
 		xComp := 0.0
 		yComp := 0.0
-		if gravEnabled && force.source == "gravity" {
-			yComp = (force.Strength * atom.atomType.mass * 100) * -1
+		if force.source == "gravity" {
+			if gravEnabled {
+
+				yComp = (force.Strength * atom.atomType.mass * 100) * -1
+			}
 		} else {
 			distance := math.Max(math.Sqrt(math.Pow(force.xPos-atom.xPos, 2)+math.Pow(force.yPos-atom.yPos, 2))/200, 1)
 
@@ -70,9 +73,13 @@ func simulateAtom(atom *Atom, dt float64) {
 			// yComp := forceAfterDistance * math.Cos(angle)
 			xComp = forceAfterDistance * math.Sin(angle)
 			yComp = forceAfterDistance * math.Cos(angle)
+
+			// fmt.Printf("x dist: %f\ny dist: %f\n angle: %f\n xComp: %f\n\n", force.xPos-atom.xPos, force.yPos-atom.yPos, angle, xComp)
+
+			// fmt.Print(force.source)
+			// fmt.Printf("%f %f %f, %f\n", math.Sin(angle), math.Cos(angle), xComp, yComp)
 		}
 		// fmt.Printf("%f\n", xComp)
-		// fmt.Printf("%f %f %f, %f\n", math.Sin(angle), math.Cos(angle), xComp, yComp)
 
 		xForce += xComp
 		yForce += yComp
@@ -116,6 +123,28 @@ func simulateAtom(atom *Atom, dt float64) {
 	if grid[gridXPos][gridYPos] != nil && grid[gridXPos][gridYPos] != atom {
 		// fmt.Print("collide")
 		handleCollision(atom, grid[gridXPos][gridYPos])
+		if atom.currGridXPos != gridXPos {
+			if grid[gridXPos][atom.currGridYPos] == nil {
+				grid[atom.currGridXPos][atom.currGridYPos] = nil
+				atom.currGridXPos = gridXPos
+				grid[atom.currGridXPos][atom.currGridYPos] = atom
+				atom.xPos = float64(gridXPos * AtomWidth)
+			} else {
+
+				atom.xPos = float64(atom.currGridXPos * AtomWidth)
+			}
+		}
+		if atom.currGridYPos != gridYPos {
+			if grid[atom.currGridXPos][gridYPos] == nil {
+				grid[atom.currGridXPos][atom.currGridYPos] = nil
+				atom.currGridYPos = gridYPos
+				grid[atom.currGridXPos][atom.currGridYPos] = atom
+				atom.yPos = float64(gridYPos * AtomWidth)
+			} else {
+
+				atom.yPos = float64(atom.currGridYPos * AtomWidth)
+			}
+		}
 	} else {
 		grid[atom.currGridXPos][atom.currGridYPos] = nil
 		grid[gridXPos][gridYPos] = atom
@@ -127,13 +156,32 @@ func simulateAtom(atom *Atom, dt float64) {
 
 // set the atom's position and velocity
 func simulateWater(atom *Atom, dt float64) {
-	if math.Abs(atom.xVel) < 50 {
+	// if math.Abs(atom.xVel) < 50 {
 
-		if rand.Float64() > 0.5 {
+	// 	if rand.Float64() > 0.5 {
 
-			atom.xVel = 100
-		} else {
-			atom.xVel = -100
+	// 		atom.xVel = 50
+	// 	} else {
+	// 		atom.xVel = -50
+	// 	}
+	// }
+	if atom.currGridYPos > 0 && grid[atom.currGridXPos][atom.currGridYPos-1] != nil {
+
+		if grid[atom.currGridXPos+1][atom.currGridYPos] == nil {
+
+			// grid[atom.currGridXPos][atom.currGridYPos] = nil
+			// atom.currGridXPos += 1
+			// atom.xPos += AtomWidth
+			// grid[atom.currGridXPos][atom.currGridYPos] = atom
+			atom.xVel += 100
+
+		} else if atom.currGridXPos-1 >= 0 && grid[atom.currGridXPos-1][atom.currGridYPos] == nil {
+
+			// grid[atom.currGridXPos][atom.currGridYPos] = nil
+			// atom.currGridXPos -= 1
+			// atom.xPos -= AtomWidth
+			// grid[atom.currGridXPos][atom.currGridYPos] = atom
+			atom.xVel -= 100
 		}
 	}
 }
