@@ -69,6 +69,11 @@ type RigidBody struct {
 	angularVelocity float64
 	deltaX          float64
 	deltaY          float64
+	xForce          float64
+	yForce          float64
+	xVel            float64
+	yVel            float64
+	mass            float64
 }
 
 // constant definitions
@@ -102,7 +107,7 @@ var AtomTypes = []AtomType{
 		0.2,
 		pixel.RGB(0.5, 0.2, 0),
 		2,
-		1,
+		5,
 		0.5,
 	},
 	AtomType{

@@ -190,6 +190,7 @@ func simulateWater(atom *Atom, dt float64) {
 		}
 	}
 }
+
 func simulateRigidBodyAtom(atom *Atom, dt float64) {
 	if atom.rigidBody != nil {
 
@@ -233,6 +234,10 @@ func simulateRigidBodyAtom(atom *Atom, dt float64) {
 			// T = r cross F
 			//(a,b)×(c,d)=ad−bc.
 			atom.rigidBody.torque += xComp*yDist - yComp*xDist
+
+			// add force to rigidBody
+			atom.rigidBody.xForce += xForce
+			atom.rigidBody.yForce += yForce
 
 			// calculate angular acceleration
 

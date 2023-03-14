@@ -63,15 +63,15 @@ func calculateMomentOfInertia(rb *RigidBody) {
 func calculateCenterOfMass(rb *RigidBody) {
 	xCOM := 0.0
 	yCOM := 0.0
-	mass := 0.0
+	// mass := 0.0
 	for _, atom := range rb.atoms {
 
 		xCOM += atom.xPos * atom.atomType.mass
 		yCOM += atom.yPos * atom.atomType.mass
-		mass += atom.atomType.mass
+		rb.mass += atom.atomType.mass
 	}
-	rb.xPos = xCOM / math.Max(mass, 1)
-	rb.yPos = yCOM / math.Max(mass, 1)
+	rb.xPos = xCOM / math.Max(rb.mass, 1)
+	rb.yPos = yCOM / math.Max(rb.mass, 1)
 
 }
 
@@ -82,14 +82,14 @@ func rotateAndRenderRigidBody(rb *RigidBody, win *pixelgl.Window, imd *imdraw.IM
 	// fmt.Printf("\rtorque: %f", rb.torque)
 
 	tempXPos := rb.xPos
-	rb.xPos += 1
+	// rb.xPos += 1
 	// rb.xPos = win.MousePosition().X
-	rb.deltaX = rb.xPos - tempXPos
+	// rb.deltaX = rb.xPos - tempXPos
 
 	tempYPos := rb.yPos
-	rb.yPos += 1
+	// rb.yPos += 1
 	// rb.yPos = win.MousePosition().Y
-	rb.deltaY = rb.yPos - tempYPos
+	// rb.deltaY = rb.yPos - tempYPos
 
 	// angular acceleration
 	aAcc := rb.torque / rb.momentOfInertia
@@ -97,6 +97,18 @@ func rotateAndRenderRigidBody(rb *RigidBody, win *pixelgl.Window, imd *imdraw.IM
 	rb.rotation = (rb.angularVelocity * dt) + (0.5 * aAcc * (dt * dt))
 
 	rb.angularVelocity = rb.angularVelocity + (aAcc * dt)
+
+	// linear movement
+	xAcc := rb.xForce / rb.mass
+	rb.xPos = rb.xPos + (rb.xVel * dt) + (0.5 * xAcc * (dt * dt))
+	rb.xVel = rb.xVel + (xAcc * dt)
+
+	yAcc := rb.yForce / rb.mass
+	rb.yPos = rb.yPos + (rb.yVel * dt) + (0.5 * yAcc * (dt * dt))
+	rb.yVel = rb.yVel + (yAcc * dt)
+
+	rb.deltaX = rb.xPos - tempXPos
+	rb.deltaY = rb.yPos - tempYPos
 	// atom.yPos = atom.yPos + (atom.yVel * dt) + (0.5 * yAcc * (dt * dt))
 
 	// atom.yVel = atom.yVel + (yAcc * dt)
@@ -141,6 +153,8 @@ func rotateAndRenderRigidBody(rb *RigidBody, win *pixelgl.Window, imd *imdraw.IM
 	rb.rotated = false
 	rb.rotation = 0.0
 	rb.deltaX = 0.0
+	rb.xForce = 0
+	rb.yForce = 0
 
 	// rb.yPos = win.MousePosition().Y
 }
@@ -153,26 +167,33 @@ func buildRigidBodies(win *pixelgl.Window, imd *imdraw.IMDraw) {
 	for _, atom := range RigidBodyAtoms {
 
 		// if the atom was not added to a rigid body, add a new one
-		if atom.rigidBody == nil {
-			rb := RigidBody{
-				0.0,
-				0.0,
-				0.0,
-				nil,
-				pixel.RGB(rand.Float64(), rand.Float64(), rand.Float64()),
-				true,
-				0.0,
-				0.0,
-				0.0,
-				0.0,
-				0.0,
+		if atom.atomType.name == "rigidBody" {
+			if atom.rigidBody == nil {
+				rb := RigidBody{
+					0.0,
+					0.0,
+					0.0,
+					nil,
+					pixel.RGB(rand.Float64(), rand.Float64(), rand.Float64()),
+					true,
+					0.0,
+					0.0,
+					0.0,
+					0.0,
+					0.0,
+					0.0,
+					0.0,
+					0.0,
+					0.0,
+					0.0,
+				}
+				rb.atoms = depthFirstSearch(atom, &rb)
+				// atom.rigidBody = &rb
+				rigidBodies = append(rigidBodies, &rb)
+				calculateCenterOfMass(&rb)
+				calculateMomentOfInertia(&rb)
+				fmt.Printf("moment of inertia: %f\n", rb.momentOfInertia)
 			}
-			rb.atoms = depthFirstSearch(atom, &rb)
-			// atom.rigidBody = &rb
-			rigidBodies = append(rigidBodies, &rb)
-			calculateCenterOfMass(&rb)
-			calculateMomentOfInertia(&rb)
-			fmt.Printf("moment of inertia: %f\n", rb.momentOfInertia)
 		}
 	}
 	RigidBodyAtoms = []*Atom{}
