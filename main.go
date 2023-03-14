@@ -58,12 +58,15 @@ type Player struct {
 }
 
 type RigidBody struct {
-	xPos     float64 // xPos of center of mass
-	yPos     float64 // yPos of center of mass
-	rotation float64 // rotation away from normal
-	atoms    []*Atom // atoms that make up the rigid body
-	color    pixel.RGBA
-	rotated  bool
+	xPos            float64 // xPos of center of mass
+	yPos            float64 // yPos of center of mass
+	rotation        float64 // rotation away from normal
+	atoms           []*Atom // atoms that make up the rigid body
+	color           pixel.RGBA
+	rotated         bool
+	momentOfInertia float64
+	torque          float64
+	angularVelocity float64
 }
 
 // constant definitions
@@ -97,7 +100,7 @@ var AtomTypes = []AtomType{
 		0.2,
 		pixel.RGB(0.5, 0.2, 0),
 		2,
-		100,
+		1,
 		0.5,
 	},
 	AtomType{
@@ -202,9 +205,9 @@ func run() {
 			for y := 0; y < windowHeight/AtomWidth; y++ {
 				if tempGrid[x][y] != nil {
 					renderAtom(*tempGrid[x][y], imd)
-					if tempGrid[x][y].atomType.name != "rigidBody" {
-						updatePostion(tempGrid[x][y], dt)
-					} else if tempGrid[x][y].rigidBody == nil {
+					// if tempGrid[x][y].atomType.name != "rigidBody" {
+					updatePostion(tempGrid[x][y], dt)
+					if tempGrid[x][y].rigidBody == nil {
 						RigidBodyAtoms = append(RigidBodyAtoms, tempGrid[x][y])
 					}
 
@@ -215,16 +218,16 @@ func run() {
 		for _, rb := range rigidBodies {
 			// fmt.Printf("rigidbody xy: (%f, %f)\n", rb.xPos, rb.yPos)
 			// simulateRigidBody(win, imd)
-			if win.Pressed(pixelgl.KeyZ) {
-				rb.rotation += 0.01
-				rb.rotated = true
-			}
-			if win.Pressed(pixelgl.KeyX) {
-				rb.rotation -= 0.01
-				rb.rotated = true
-			}
+			// if win.Pressed(pixelgl.KeyZ) {
+			// 	rb.rotation += 0.01
+			// 	rb.rotated = true
+			// }
+			// if win.Pressed(pixelgl.KeyX) {
+			// 	rb.rotation -= 0.01
+			// 	rb.rotated = true
+			// }
 
-			rotateAndRenderRigidBody(rb, imd)
+			rotateAndRenderRigidBody(rb, imd, dt)
 			// renderRigidBody(rb, imd)
 		}
 

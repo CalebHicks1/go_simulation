@@ -6,16 +6,15 @@ import (
 
 func updatePostion(atom *Atom, dt float64) {
 
-	if atom.atomType.name != "static" && atom.atomType.name != "rigidBody" {
-
-		switch atom.atomType.name {
-		case "water":
-			simulateWater(atom, dt)
-		// case "stone":
-		// 	simulateStone(atom, dt)
-		default:
-			break
-		}
+	switch atom.atomType.name {
+	case "water":
+		simulateWater(atom, dt)
+		simulateAtom(atom, dt)
+	case "rigidBody":
+		simulateRigidBodyAtom(atom, dt)
+	case "static":
+		// do nothing
+	default:
 		simulateAtom(atom, dt)
 	}
 }
@@ -188,6 +187,60 @@ func simulateWater(atom *Atom, dt float64) {
 			atom.xPos = float64(atom.currGridXPos * AtomWidth)
 			grid[atom.currGridXPos][atom.currGridYPos] = atom
 			// atom.xVel -= 100
+		}
+	}
+}
+func simulateRigidBodyAtom(atom *Atom, dt float64) {
+	if atom.rigidBody != nil {
+
+		xForce := 0.0
+		yForce := 0.0
+		for _, force := range forces {
+
+			xComp := 0.0
+			yComp := 0.0
+			if force.source == "gravity" {
+				if gravEnabled {
+
+					yComp = (force.Strength * atom.atomType.mass * 100) * -1
+				}
+			} else {
+				distance := math.Max(math.Sqrt(math.Pow(force.xPos-atom.xPos, 2)+math.Pow(force.yPos-atom.yPos, 2))/200, 1)
+
+				forceAfterDistance := force.Strength / math.Pow(distance, 2)
+
+				angle := math.Atan2(force.xPos-atom.xPos, force.yPos-atom.yPos)
+				// xComp := forceAfterDistance * math.Sin(angle)
+				// yComp := forceAfterDistance * math.Cos(angle)
+				xComp = forceAfterDistance * math.Sin(angle)
+				yComp = forceAfterDistance * math.Cos(angle)
+
+				// fmt.Printf("x dist: %f\ny dist: %f\n angle: %f\n xComp: %f\n\n", force.xPos-atom.xPos, force.yPos-atom.yPos, angle, xComp)
+
+				// fmt.Print(force.source)
+				// fmt.Printf("%f %f %f, %f\n", math.Sin(angle), math.Cos(angle), xComp, yComp)
+			}
+			// fmt.Printf("%f\n", xComp)
+
+			xForce += xComp
+			yForce += yComp
+
+			// get radius components
+			xDist := atom.xPos - atom.rigidBody.xPos
+			yDist := atom.yPos - atom.rigidBody.yPos
+
+			// calculate torque
+			// T = r cross F
+			//(a,b)×(c,d)=ad−bc.
+			atom.rigidBody.torque += xComp*yDist - yComp*xDist
+
+			// calculate angular acceleration
+
+			// total torque = I * acc
+
+			// angular acceleration = torque / I
+			// I = m*r^2
+
 		}
 	}
 }

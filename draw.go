@@ -15,13 +15,16 @@ func renderAtom(atom Atom, imd *imdraw.IMDraw) {
 	renderXPos := 0.0
 	renderYPos := 0.0
 	if atom.rigidBody == nil {
-
 		imd.Color = atom.atomType.color
+		renderXPos = float64(atom.currGridXPos * AtomWidth)
+		renderYPos = float64(atom.currGridYPos * AtomWidth)
 	} else {
 		imd.Color = atom.rigidBody.color
+		renderXPos = math.Floor(atom.xPos/AtomWidth) * AtomWidth
+		renderYPos = math.Floor(atom.yPos/AtomWidth) * AtomWidth
+		// renderXPos = atom.xPos
+		// renderYPos = atom.yPos
 	}
-	renderXPos = float64(atom.currGridXPos * AtomWidth)
-	renderYPos = float64(atom.currGridYPos * AtomWidth)
 	imd.Push(pixel.V(float64(renderXPos)-float64(atom.atomType.extraWidth), float64(renderYPos)-float64(atom.atomType.extraWidth)))
 	imd.Push(pixel.V(float64(renderXPos)+AtomWidth+float64(atom.atomType.extraWidth), float64(renderYPos)+AtomWidth+float64(atom.atomType.extraWidth)))
 	imd.Rectangle(0)
@@ -66,6 +69,8 @@ func loadPicture(path string) (pixel.Picture, error) {
 
 func renderPlayer(imd *imdraw.IMDraw, player Player) {
 	imd.Color = player.color
-	imd.Push(pixel.V(player.xPos, player.yPos))
-	imd.Circle(float64(player.width), 0)
+	imd.Push(pixel.V(player.xPos, player.yPos-float64(player.width)))
+	imd.Push(pixel.V(player.xPos+float64(player.width), player.yPos+float64(player.width)))
+	// imd.Circle(float64(player.width), 0)
+	imd.Rectangle(0)
 }

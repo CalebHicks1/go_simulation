@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"math"
 	"math/rand"
 
@@ -45,11 +46,26 @@ func depthFirstSearch(atom *Atom, rb *RigidBody) []*Atom {
 
 }
 
+func calculateMomentOfInertia(rb *RigidBody) {
+	moi := 0.0
+	for _, atom := range rb.atoms {
+
+		xDist := atom.xPos - rb.xPos
+		yDist := atom.yPos - rb.yPos
+
+		// todo: redundant calculation?
+		distance := math.Sqrt(math.Pow(xDist, 2) + math.Pow(yDist, 2))
+		moi += atom.atomType.mass * math.Pow(distance, 2)
+	}
+	rb.momentOfInertia = moi
+}
+
 func calculateCenterOfMass(rb *RigidBody) {
 	xCOM := 0.0
 	yCOM := 0.0
 	mass := 0.0
 	for _, atom := range rb.atoms {
+
 		xCOM += atom.xPos * atom.atomType.mass
 		yCOM += atom.yPos * atom.atomType.mass
 		mass += atom.atomType.mass
@@ -59,10 +75,23 @@ func calculateCenterOfMass(rb *RigidBody) {
 
 }
 
-func rotateAndRenderRigidBody(rb *RigidBody, imd *imdraw.IMDraw) {
+func rotateAndRenderRigidBody(rb *RigidBody, imd *imdraw.IMDraw, dt float64) {
 
 	// for every atom
 	// if rb.rotated {
+	// fmt.Printf("\rtorque: %f", rb.torque)
+
+	// angular acceleration
+	aAcc := rb.torque / rb.momentOfInertia
+
+	rb.rotation = (rb.angularVelocity * dt) + (0.5 * aAcc * (dt * dt))
+
+	rb.angularVelocity = rb.angularVelocity + (aAcc * dt)
+	// atom.yPos = atom.yPos + (atom.yVel * dt) + (0.5 * yAcc * (dt * dt))
+
+	// atom.yVel = atom.yVel + (yAcc * dt)
+	//theta = wt + 1/2 \alpha t^{2}
+
 	for _, atom := range rb.atoms {
 
 		newXPos := ((atom.xPos - rb.xPos) * math.Cos(rb.rotation)) - ((atom.yPos - rb.yPos) * math.Sin(rb.rotation)) + rb.xPos
@@ -95,6 +124,7 @@ func rotateAndRenderRigidBody(rb *RigidBody, imd *imdraw.IMDraw) {
 
 		// fmt.Printf("atom.xPos: %f, atom.yPos: %f, (%d, %d)\n", atom.xPos, atom.yPos, atom.currGridXPos, atom.currGridYPos)
 	}
+	rb.torque = 0.0
 	rb.rotated = false
 	rb.rotation = 0.0
 }
@@ -115,12 +145,16 @@ func buildRigidBodies(win *pixelgl.Window, imd *imdraw.IMDraw) {
 				nil,
 				pixel.RGB(rand.Float64(), rand.Float64(), rand.Float64()),
 				true,
+				0.0,
+				0.0,
+				0.0,
 			}
 			rb.atoms = depthFirstSearch(atom, &rb)
 			// atom.rigidBody = &rb
 			rigidBodies = append(rigidBodies, &rb)
 			calculateCenterOfMass(&rb)
-			// fmt.Print(depthFirstSearch(atom, &rb))
+			calculateMomentOfInertia(&rb)
+			fmt.Printf("moment of inertia: %f\n", rb.momentOfInertia)
 		}
 	}
 	RigidBodyAtoms = []*Atom{}
