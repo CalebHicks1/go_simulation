@@ -34,6 +34,8 @@ func handleKeyPress(win pixelgl.Window, imd *imdraw.IMDraw) {
 							gridX,
 							gridY,
 							"particle",
+							nil,
+							pixel.RGB(0, 0, 0),
 						}
 						atoms = append(atoms, &newAtom)
 						grid[gridX][gridY] = &newAtom
@@ -89,6 +91,10 @@ func handleKeyPress(win pixelgl.Window, imd *imdraw.IMDraw) {
 
 	if win.JustPressed(pixelgl.KeyG) {
 		gravEnabled = !gravEnabled
+	}
+
+	if win.JustPressed(pixelgl.KeyR) {
+		buildRigidBodies(&win, imd)
 	}
 
 	if win.Pressed(pixelgl.KeyV) {

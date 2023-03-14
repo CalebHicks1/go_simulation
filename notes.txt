@@ -1,0 +1,6 @@
+Rigidbodies:
+    - every pixel needs to keep a consistent distance from the center of mass
+    - https://www.toptal.com/game/video-game-physics-part-i-an-introduction-to-rigid-body-dynamics
+    - https://github.com/PieKing1215/FallingSandSurvival/issues/3
+
+// TODO: Only add atoms not part of a rigidbody to the rigidbodyatom list

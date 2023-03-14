@@ -6,7 +6,7 @@ import (
 
 func updatePostion(atom *Atom, dt float64) {
 
-	if atom.atomType.name != "static" {
+	if atom.atomType.name != "static" && atom.atomType.name != "rigidBody" {
 
 		switch atom.atomType.name {
 		case "water":

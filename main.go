@@ -41,6 +41,8 @@ type Atom struct {
 	currGridXPos int // the x location on the pixel grid of the atom
 	currGridYPos int // the y location on the pixel grid of the atom
 	status       string
+	rigidBody    *RigidBody
+	color        pixel.RGBA
 }
 
 type Player struct {
@@ -55,6 +57,15 @@ type Player struct {
 	mass  float64
 }
 
+type RigidBody struct {
+	xPos     float64 // xPos of center of mass
+	yPos     float64 // yPos of center of mass
+	rotation float64 // rotation away from normal
+	atoms    []*Atom // atoms that make up the rigid body
+	color    pixel.RGBA
+	rotated  bool
+}
+
 // constant definitions
 const AtomWidth = 4
 const Gravity = 20
@@ -64,25 +75,36 @@ const mouseGrav = 2000
 
 // variable definitions
 var (
-	gravEnabled = true
-	frames      = 0
-	second      = time.Tick(time.Second)
-	WindowColor = pixel.RGB(1, 1, 0.9)
-	atoms       []*Atom
-	forces      []Force
-	grid        [windowWidth/AtomWidth + 1][windowHeight/AtomWidth + 1]*Atom
-	timeElapsed float64
-	currType    = 0
-	atlas       = text.NewAtlas(basicfont.Face7x13, text.ASCII)
-	typeText    = text.New(pixel.V(10, windowHeight-23), atlas)
+	gravEnabled    = true
+	frames         = 0
+	second         = time.Tick(time.Second)
+	WindowColor    = pixel.RGB(1, 1, 0.9)
+	atoms          []*Atom
+	forces         []Force
+	grid           [windowWidth/AtomWidth + 1][windowHeight/AtomWidth + 1]*Atom
+	timeElapsed    float64
+	currType       = 0
+	atlas          = text.NewAtlas(basicfont.Face7x13, text.ASCII)
+	typeText       = text.New(pixel.V(10, windowHeight-23), atlas)
+	RigidBodyAtoms []*Atom // holds atoms that have not been assigned to a rigidbody yet
+	rigidBodies    []*RigidBody
 )
 
 var AtomTypes = []AtomType{
 	AtomType{
+		"rigidBody",
+		0.2,
+		0.2,
+		pixel.RGB(0.5, 0.2, 0),
+		2,
+		100,
+		0.5,
+	},
+	AtomType{
 		"water",
 		0.5,
 		0.2,
-		pixel.RGB(0.1, 0.6, 1),
+		pixel.RGB(0.1, 0.6, 1).Mul(pixel.Alpha(0.5)),
 		2,
 		0.5,
 		0.5,
@@ -166,25 +188,47 @@ func run() {
 		handleKeyPress(*win, imd)
 
 		// simulate Atoms
+
+		// for _, force := range forces {
+		// 	renderForce(force, imd)
+		// }
+		win.Clear(WindowColor)
+		controlPlayer(*win, &player, dt)
+		simulatePlayer(&player, dt)
+		renderPlayer(imd, player)
+
 		tempGrid := grid
 		for x := 0; x < windowWidth/AtomWidth; x++ {
 			for y := 0; y < windowHeight/AtomWidth; y++ {
 				if tempGrid[x][y] != nil {
 					renderAtom(*tempGrid[x][y], imd)
-					updatePostion(tempGrid[x][y], dt)
+					if tempGrid[x][y].atomType.name != "rigidBody" {
+						updatePostion(tempGrid[x][y], dt)
+					} else if tempGrid[x][y].rigidBody == nil {
+						RigidBodyAtoms = append(RigidBodyAtoms, tempGrid[x][y])
+					}
+
 				}
 			}
 		}
 
-		// for _, force := range forces {
-		// 	renderForce(force, imd)
-		// }
+		for _, rb := range rigidBodies {
+			// fmt.Printf("rigidbody xy: (%f, %f)\n", rb.xPos, rb.yPos)
+			// simulateRigidBody(win, imd)
+			if win.Pressed(pixelgl.KeyZ) {
+				rb.rotation += 0.01
+				rb.rotated = true
+			}
+			if win.Pressed(pixelgl.KeyX) {
+				rb.rotation -= 0.01
+				rb.rotated = true
+			}
+
+			rotateAndRenderRigidBody(rb, imd)
+			// renderRigidBody(rb, imd)
+		}
 
 		// draw to screen
-		win.Clear(WindowColor)
-		controlPlayer(*win, &player, dt)
-		simulatePlayer(&player, dt)
-		renderPlayer(imd, player)
 		imd.Draw(win)
 		typeText.Draw(win, pixel.IM)
 		// grid.Draw(win)
