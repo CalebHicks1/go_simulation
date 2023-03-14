@@ -67,6 +67,8 @@ type RigidBody struct {
 	momentOfInertia float64
 	torque          float64
 	angularVelocity float64
+	deltaX          float64
+	deltaY          float64
 }
 
 // constant definitions
@@ -227,7 +229,8 @@ func run() {
 			// 	rb.rotated = true
 			// }
 
-			rotateAndRenderRigidBody(rb, imd, dt)
+			rotateAndRenderRigidBody(rb, win, imd, dt)
+			renderRigidBody(rb, imd)
 			// renderRigidBody(rb, imd)
 		}
 

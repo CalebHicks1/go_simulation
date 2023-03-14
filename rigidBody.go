@@ -75,11 +75,21 @@ func calculateCenterOfMass(rb *RigidBody) {
 
 }
 
-func rotateAndRenderRigidBody(rb *RigidBody, imd *imdraw.IMDraw, dt float64) {
+func rotateAndRenderRigidBody(rb *RigidBody, win *pixelgl.Window, imd *imdraw.IMDraw, dt float64) {
 
 	// for every atom
 	// if rb.rotated {
 	// fmt.Printf("\rtorque: %f", rb.torque)
+
+	tempXPos := rb.xPos
+	rb.xPos += 1
+	// rb.xPos = win.MousePosition().X
+	rb.deltaX = rb.xPos - tempXPos
+
+	tempYPos := rb.yPos
+	rb.yPos += 1
+	// rb.yPos = win.MousePosition().Y
+	rb.deltaY = rb.yPos - tempYPos
 
 	// angular acceleration
 	aAcc := rb.torque / rb.momentOfInertia
@@ -96,6 +106,9 @@ func rotateAndRenderRigidBody(rb *RigidBody, imd *imdraw.IMDraw, dt float64) {
 
 		newXPos := ((atom.xPos - rb.xPos) * math.Cos(rb.rotation)) - ((atom.yPos - rb.yPos) * math.Sin(rb.rotation)) + rb.xPos
 		newYPos := ((atom.xPos - rb.xPos) * math.Sin(rb.rotation)) + ((atom.yPos - rb.yPos) * math.Cos(rb.rotation)) + rb.yPos
+
+		newXPos += rb.deltaX
+		newYPos += rb.deltaY
 
 		atom.xPos = newXPos
 		atom.yPos = newYPos
@@ -127,6 +140,9 @@ func rotateAndRenderRigidBody(rb *RigidBody, imd *imdraw.IMDraw, dt float64) {
 	rb.torque = 0.0
 	rb.rotated = false
 	rb.rotation = 0.0
+	rb.deltaX = 0.0
+
+	// rb.yPos = win.MousePosition().Y
 }
 
 // }
@@ -145,6 +161,8 @@ func buildRigidBodies(win *pixelgl.Window, imd *imdraw.IMDraw) {
 				nil,
 				pixel.RGB(rand.Float64(), rand.Float64(), rand.Float64()),
 				true,
+				0.0,
+				0.0,
 				0.0,
 				0.0,
 				0.0,
