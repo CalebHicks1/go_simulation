@@ -85,7 +85,7 @@ const mouseGrav = 2000
 
 // variable definitions
 var (
-	gravEnabled    = true
+	gravEnabled    = false
 	frames         = 0
 	second         = time.Tick(time.Second)
 	WindowColor    = pixel.RGB(1, 1, 0.9)

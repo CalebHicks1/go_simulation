@@ -34,7 +34,7 @@ func renderRigidBody(rb *RigidBody, imd *imdraw.IMDraw) {
 	// y := windowHeight / 2
 	imd.Color = pixel.RGB(1, 0, 0)
 	imd.Push(pixel.V(rb.xPos, rb.yPos))
-	imd.Circle(10, 0)
+	imd.Circle(5, 0)
 }
 
 func renderForce(force Force, imd *imdraw.IMDraw) {

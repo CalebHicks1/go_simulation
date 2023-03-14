@@ -64,6 +64,7 @@ func calculateCenterOfMass(rb *RigidBody) {
 	xCOM := 0.0
 	yCOM := 0.0
 	// mass := 0.0
+	rb.mass = 0.0
 	for _, atom := range rb.atoms {
 
 		xCOM += atom.xPos * atom.atomType.mass
@@ -132,11 +133,13 @@ func rotateAndRenderRigidBody(rb *RigidBody, win *pixelgl.Window, imd *imdraw.IM
 		// renderYPos := 0.0
 
 		// if grid[gridXPos][gridYPos] == nil {
+		if gridXPos > 0 && gridXPos < windowWidth/AtomWidth && gridYPos > 0 && gridYPos < windowHeight/AtomWidth {
 
-		grid[atom.currGridXPos][atom.currGridYPos] = nil
-		atom.currGridXPos = gridXPos
-		atom.currGridYPos = gridYPos
-		grid[atom.currGridXPos][atom.currGridYPos] = atom
+			grid[atom.currGridXPos][atom.currGridYPos] = nil
+			atom.currGridXPos = gridXPos
+			atom.currGridYPos = gridYPos
+			grid[atom.currGridXPos][atom.currGridYPos] = atom
+		}
 
 		// }
 
@@ -155,6 +158,7 @@ func rotateAndRenderRigidBody(rb *RigidBody, win *pixelgl.Window, imd *imdraw.IM
 	rb.deltaX = 0.0
 	rb.xForce = 0
 	rb.yForce = 0
+	calculateCenterOfMass(rb)
 
 	// rb.yPos = win.MousePosition().Y
 }
