@@ -4,3 +4,9 @@ Rigidbodies:
     - https://github.com/PieKing1215/FallingSandSurvival/issues/3
 
 // TODO: Only add atoms not part of a rigidbody to the rigidbodyatom list
+
+
+
+1. write delta X based on old x force
+2. atoms react to delta x, set new x force
+3. set delta x = 0, old x force = new x force, new x force = 0

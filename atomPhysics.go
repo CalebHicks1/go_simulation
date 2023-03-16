@@ -194,6 +194,38 @@ func simulateWater(atom *Atom, dt float64) {
 func simulateRigidBodyAtom(atom *Atom, dt float64) {
 	if atom.rigidBody != nil {
 
+		// calculate new position
+
+		newXPos := atom.xPos + atom.rigidBody.deltaX
+		newYPos := atom.yPos + atom.rigidBody.deltaY
+
+		atom.xPos = newXPos
+		atom.yPos = newYPos
+
+		newXPos = ((atom.xPos - atom.rigidBody.xPos) * math.Cos(atom.rigidBody.rotation)) - ((atom.yPos - atom.rigidBody.yPos) * math.Sin(atom.rigidBody.rotation)) + atom.rigidBody.xPos
+		newYPos = ((atom.xPos - atom.rigidBody.xPos) * math.Sin(atom.rigidBody.rotation)) + ((atom.yPos - atom.rigidBody.yPos) * math.Cos(atom.rigidBody.rotation)) + atom.rigidBody.yPos
+
+		atom.xPos = newXPos
+		atom.yPos = newYPos
+
+		gridXPos := int(math.Floor(atom.xPos / AtomWidth))
+		gridYPos := int(math.Floor(atom.yPos / AtomWidth))
+
+		// renderXPos := 0.0
+		// renderYPos := 0.0
+
+		if gridXPos > 0 && gridXPos < windowWidth/AtomWidth && gridYPos > 0 && gridYPos < windowHeight/AtomWidth {
+			if grid[gridXPos][gridYPos] == nil {
+
+				grid[atom.currGridXPos][atom.currGridYPos] = nil
+				atom.currGridXPos = gridXPos
+				atom.currGridYPos = gridYPos
+				grid[atom.currGridXPos][atom.currGridYPos] = atom
+			}
+		}
+
+		////////////////////
+
 		xForce := 0.0
 		yForce := 0.0
 		for _, force := range forces {
@@ -216,12 +248,7 @@ func simulateRigidBodyAtom(atom *Atom, dt float64) {
 				xComp = forceAfterDistance * math.Sin(angle)
 				yComp = forceAfterDistance * math.Cos(angle)
 
-				// fmt.Printf("x dist: %f\ny dist: %f\n angle: %f\n xComp: %f\n\n", force.xPos-atom.xPos, force.yPos-atom.yPos, angle, xComp)
-
-				// fmt.Print(force.source)
-				// fmt.Printf("%f %f %f, %f\n", math.Sin(angle), math.Cos(angle), xComp, yComp)
 			}
-			// fmt.Printf("%f\n", xComp)
 
 			xForce += xComp
 			yForce += yComp
@@ -239,6 +266,7 @@ func simulateRigidBodyAtom(atom *Atom, dt float64) {
 			atom.rigidBody.xForce += xForce
 			atom.rigidBody.yForce += yForce
 
+			// center of mass
 			// calculate angular acceleration
 
 			// total torque = I * acc
@@ -247,5 +275,40 @@ func simulateRigidBodyAtom(atom *Atom, dt float64) {
 			// I = m*r^2
 
 		}
+		atom.rigidBody.xCOM += atom.xPos * atom.atomType.mass
+		atom.rigidBody.yCOM += atom.yPos * atom.atomType.mass
+		atom.rigidBody.mass += atom.atomType.mass
+		atom.rigidBody.numAtoms += 1
+	} else {
+		// atom.atomType = AtomTypes[1]
+		// rb := RigidBody{
+		// 	0.0,
+		// 	0.0,
+		// 	0.0,
+		// 	nil,
+		// 	pixel.RGB(rand.Float64(), rand.Float64(), rand.Float64()),
+		// 	true,
+		// 	0.0,
+		// 	0.0,
+		// 	0.0,
+		// 	0.0,
+		// 	0.0,
+		// 	0.0,
+		// 	0.0,
+		// 	0.0,
+		// 	0.0,
+		// 	0.0,
+		// 	0.0,
+		// 	0.0,
+		// 	0.0,
+		// 	0,
+		// 	0,
+		// }
+		// rb.atoms = depthFirstSearch(atom, &rb)
+		// // atom.rigidBody = &rb
+		// rigidBodies = append(rigidBodies, &rb)
+		// calculateCenterOfMass(&rb)
+		// calculateMomentOfInertia(&rb)
+		// fmt.Printf("moment of inertia: %f\n", rb.momentOfInertia)
 	}
 }

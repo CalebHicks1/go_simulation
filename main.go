@@ -74,6 +74,11 @@ type RigidBody struct {
 	xVel            float64
 	yVel            float64
 	mass            float64
+	xCOM            float64
+	yCOM            float64
+	prevMass        float64
+	rounds          int
+	numAtoms        int
 }
 
 // constant definitions
@@ -98,6 +103,7 @@ var (
 	typeText       = text.New(pixel.V(10, windowHeight-23), atlas)
 	RigidBodyAtoms []*Atom // holds atoms that have not been assigned to a rigidbody yet
 	rigidBodies    []*RigidBody
+	cursorSize     = 10.0
 )
 
 var AtomTypes = []AtomType{
@@ -106,7 +112,7 @@ var AtomTypes = []AtomType{
 		0.2,
 		0.2,
 		pixel.RGB(0.5, 0.2, 0),
-		2,
+		0,
 		5,
 		0.5,
 	},
@@ -189,7 +195,10 @@ func run() {
 		pixel.RGB(0, 0, 1),
 		5}
 
+	counter := 0
+
 	for !win.Closed() {
+		cursorSize += win.MouseScroll().Y
 		dt := time.Since(last).Seconds()
 		last = time.Now()
 		imd.Clear() // clear the window
@@ -238,6 +247,7 @@ func run() {
 			renderRigidBody(rb, imd)
 			// renderRigidBody(rb, imd)
 		}
+		counter = (counter + 1) % 2
 
 		// draw to screen
 		imd.Draw(win)

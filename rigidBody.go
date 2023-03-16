@@ -110,55 +110,52 @@ func rotateAndRenderRigidBody(rb *RigidBody, win *pixelgl.Window, imd *imdraw.IM
 
 	rb.deltaX = rb.xPos - tempXPos
 	rb.deltaY = rb.yPos - tempYPos
-	// atom.yPos = atom.yPos + (atom.yVel * dt) + (0.5 * yAcc * (dt * dt))
 
-	// atom.yVel = atom.yVel + (yAcc * dt)
-	//theta = wt + 1/2 \alpha t^{2}
-
-	for _, atom := range rb.atoms {
-
-		newXPos := ((atom.xPos - rb.xPos) * math.Cos(rb.rotation)) - ((atom.yPos - rb.yPos) * math.Sin(rb.rotation)) + rb.xPos
-		newYPos := ((atom.xPos - rb.xPos) * math.Sin(rb.rotation)) + ((atom.yPos - rb.yPos) * math.Cos(rb.rotation)) + rb.yPos
-
-		newXPos += rb.deltaX
-		newYPos += rb.deltaY
-
-		atom.xPos = newXPos
-		atom.yPos = newYPos
-
-		gridXPos := int(math.Floor(atom.xPos / AtomWidth))
-		gridYPos := int(math.Floor(atom.yPos / AtomWidth))
-
-		// renderXPos := 0.0
-		// renderYPos := 0.0
-
-		// if grid[gridXPos][gridYPos] == nil {
-		if gridXPos > 0 && gridXPos < windowWidth/AtomWidth && gridYPos > 0 && gridYPos < windowHeight/AtomWidth {
-
-			grid[atom.currGridXPos][atom.currGridYPos] = nil
-			atom.currGridXPos = gridXPos
-			atom.currGridYPos = gridYPos
-			grid[atom.currGridXPos][atom.currGridYPos] = atom
-		}
-
-		// }
-
-		// renderXPos = float64(atom.currGridXPos * AtomWidth)
-		// renderYPos = float64(atom.currGridYPos * AtomWidth)
-		// imd.Color = atom.atomType.color
-		// imd.Push(pixel.V(float64(renderXPos)-float64(atom.atomType.extraWidth), float64(renderYPos)-float64(atom.atomType.extraWidth)))
-		// imd.Push(pixel.V(float64(renderXPos)+AtomWidth+float64(atom.atomType.extraWidth), float64(renderYPos)+AtomWidth+float64(atom.atomType.extraWidth)))
-		// imd.Rectangle(0)
-
-		// fmt.Printf("atom.xPos: %f, atom.yPos: %f, (%d, %d)\n", atom.xPos, atom.yPos, atom.currGridXPos, atom.currGridYPos)
-	}
+	// reset some values
 	rb.torque = 0.0
-	rb.rotated = false
-	rb.rotation = 0.0
-	rb.deltaX = 0.0
+	// rb.rotated = false
+	// rb.rotation = 0.0
+	// rb.deltaX = 0.0
+	// rb.deltaY = 0.0
 	rb.xForce = 0
 	rb.yForce = 0
-	calculateCenterOfMass(rb)
+	// calculateCenterOfMass(rb)
+
+	// center of mass
+	rb.xPos = rb.xCOM / math.Max(rb.mass, 1)
+	rb.yPos = rb.yCOM / math.Max(rb.mass, 1)
+	rb.xCOM = 0
+	rb.yCOM = 0
+	fmt.Printf("\r%d, %f, %f", rb.numAtoms, rb.mass, rb.prevMass)
+	if rb.prevMass != rb.mass {
+		if rb.rounds <= 2 {
+			fmt.Print("first")
+			rb.rounds += 1
+			rb.prevMass = rb.mass
+			// rb.mass = 0.0
+		} else {
+
+			for _, atom := range rb.atoms {
+				atom.rigidBody = nil
+			}
+			for index, rigidBody := range rigidBodies {
+				if rb == rigidBody {
+					rigidBodies[index] = rigidBodies[len(rigidBodies)-1]
+					rigidBodies = rigidBodies[:len(rigidBodies)-1]
+				}
+			}
+		}
+
+	} else {
+
+		// rb.prevMass = rb.mass
+		// rb.mass = 0.0
+	}
+	rb.prevMass = rb.mass
+	rb.mass = 0.0
+	rb.numAtoms = 0
+	// rb.prevMass = rb.mass
+	// rb.mass = 0.0
 
 	// rb.yPos = win.MousePosition().Y
 }
@@ -190,6 +187,11 @@ func buildRigidBodies(win *pixelgl.Window, imd *imdraw.IMDraw) {
 					0.0,
 					0.0,
 					0.0,
+					0.0,
+					0.0,
+					0.0,
+					0,
+					0,
 				}
 				rb.atoms = depthFirstSearch(atom, &rb)
 				// atom.rigidBody = &rb

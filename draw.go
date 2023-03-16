@@ -20,8 +20,10 @@ func renderAtom(atom Atom, imd *imdraw.IMDraw) {
 		renderYPos = float64(atom.currGridYPos * AtomWidth)
 	} else {
 		imd.Color = atom.rigidBody.color
-		renderXPos = math.Floor(atom.xPos/AtomWidth) * AtomWidth
-		renderYPos = math.Floor(atom.yPos/AtomWidth) * AtomWidth
+		renderXPos = float64(atom.currGridXPos * AtomWidth)
+		renderYPos = float64(atom.currGridYPos * AtomWidth)
+		// renderXPos = math.Floor(atom.xPos/AtomWidth) * AtomWidth
+		// renderYPos = math.Floor(atom.yPos/AtomWidth) * AtomWidth
 		// renderXPos = atom.xPos
 		// renderYPos = atom.yPos
 	}
