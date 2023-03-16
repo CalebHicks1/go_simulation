@@ -98,6 +98,7 @@ var (
 	typeText       = text.New(pixel.V(10, windowHeight-23), atlas)
 	RigidBodyAtoms []*Atom // holds atoms that have not been assigned to a rigidbody yet
 	rigidBodies    []*RigidBody
+	cursorSize     = 5.0
 )
 
 var AtomTypes = []AtomType{
@@ -190,6 +191,9 @@ func run() {
 		5}
 
 	for !win.Closed() {
+
+		cursorSize += win.MouseScroll().Y
+
 		dt := time.Since(last).Seconds()
 		last = time.Now()
 		imd.Clear() // clear the window

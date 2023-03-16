@@ -12,10 +12,12 @@ import (
 
 func handleKeyPress(win pixelgl.Window, imd *imdraw.IMDraw) {
 
+	width := math.Floor(cursorSize)
+
 	// add new atom to screen
 	if win.Pressed(pixelgl.MouseButtonLeft) {
-		for x := -5.0; x < 5; x++ {
-			for y := -5.0; y < 5; y++ {
+		for x := -width; x < width; x++ {
+			for y := -width; y < width; y++ {
 
 				// create a new atom at the location of the mouse.
 				// calculate the grid location of the atom
@@ -50,13 +52,15 @@ func handleKeyPress(win pixelgl.Window, imd *imdraw.IMDraw) {
 	// add new atom to screen
 	if win.Pressed(pixelgl.KeyE) {
 
+		width := math.Floor(cursorSize)
+
 		imd.Color = pixel.RGB(1, 0, 0)
-		imd.Push(pixel.V(win.MousePosition().X-10*AtomWidth, win.MousePosition().Y-10*AtomWidth))
-		imd.Push(pixel.V(win.MousePosition().X+10*AtomWidth, win.MousePosition().Y+10*AtomWidth))
+		imd.Push(pixel.V(win.MousePosition().X-width*AtomWidth, win.MousePosition().Y-width*AtomWidth))
+		imd.Push(pixel.V(win.MousePosition().X+width*AtomWidth, win.MousePosition().Y+width*AtomWidth))
 		imd.Rectangle(1)
 
-		for x := -10.0; x < 10; x++ {
-			for y := -10.0; y < 10; y++ {
+		for x := -width; x < width; x++ {
+			for y := -width; y < width; y++ {
 
 				// create a new atom at the location of the mouse.
 				// calculate the grid location of the atom

@@ -117,8 +117,14 @@ func rotateAndRenderRigidBody(rb *RigidBody, win *pixelgl.Window, imd *imdraw.IM
 
 	for _, atom := range rb.atoms {
 
-		newXPos := ((atom.xPos - rb.xPos) * math.Cos(rb.rotation)) - ((atom.yPos - rb.yPos) * math.Sin(rb.rotation)) + rb.xPos
-		newYPos := ((atom.xPos - rb.xPos) * math.Sin(rb.rotation)) + ((atom.yPos - rb.yPos) * math.Cos(rb.rotation)) + rb.yPos
+		atomX := atom.xPos
+		atomY := atom.yPos
+
+		rbX := rb.xPos
+		rbY := rb.yPos
+
+		newXPos := ((atomX - rbX) * math.Cos(rb.rotation)) - ((atomY - rbY) * math.Sin(rb.rotation)) + rbX
+		newYPos := ((atomX - rbX) * math.Sin(rb.rotation)) + ((atomY - rbY) * math.Cos(rb.rotation)) + rbY
 
 		newXPos += rb.deltaX
 		newYPos += rb.deltaY
